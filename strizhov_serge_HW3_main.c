@@ -15,6 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 int main(int argc, char* argv[]) {
     char* buffer = malloc(sizeof(char)*159);
@@ -27,7 +28,7 @@ int main(int argc, char* argv[]) {
     }
 
     int working = 1;
-    while (working == 1) {
+    while (working) {
         printf("%s", prompt);
 
         char* result = fgets(buffer, sizeof(char)*159, stdin);
@@ -54,24 +55,26 @@ int main(int argc, char* argv[]) {
         // full of substrings as a result of token
         // delimeters.
         else {
-            int countOfArgs = 0;
-            char* arg = strtok(buffer, " ");
+            int countOfArgs = 1; // To account for null terminator.
+            char* arg = strtok(buffer, " "); 
             while (arg) {
                 countOfArgs++;
                 arg = strtok(NULL, " ");
             }
 
-            // Need to delimeter count of args by 1 due to the initial argument being the command type. FIX IT!
-            printf("Number of args: %d", countOfArgs);
-            char* args[countOfArgs];
             char* exeName = strtok(buffer, " ");
-            arg = strtok(exeName, " ");
-            for(int i = 0; i < countOfArgs-1; i++) {
-                args[i] = arg;
+            char* args[countOfArgs];
+            args[0] = exeName;
+            if (countOfArgs > 2) {
+                arg = strtok(exeName, " ");
                 printf("%s\n", arg);
-                arg = strtok(NULL, " ");
+                for(int i = 1; i < countOfArgs; i++) {
+                    printf("%s\n", arg);
+                    args[i] = arg;
+                    arg = strtok(NULL, " ");
+                }
             }
-            args[countOfArgs] = "\0";
+            args[countOfArgs-1] = NULL;
 
             pid_t exe = fork();
             if (exe < 0) {
@@ -79,9 +82,21 @@ int main(int argc, char* argv[]) {
                 working = 0;
                 continue;
             }
-            printf("Given command: %s\n", exeName);
-            printf("PID of current process: %d\n", exe);
-            break;
+            else if (exe == 0){
+                execvp(exeName, args);
+            }
+            else {
+                int result;
+                waitpid(exe, &result, 0);
+                if (WIFEXITED(result)) {
+                    printf("Child %d, exited with %d\n", exe, WEXITSTATUS(result));
+                }
+                else {
+                    printf("Child terminated irregularly. Terminating program.\n");
+                    working = 0;
+                    continue;
+                }
+            }
         }
     }
 
