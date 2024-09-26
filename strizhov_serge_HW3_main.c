@@ -32,15 +32,18 @@ int main(int argc, char* argv[]) {
         printf("%s", prompt);
 
         char* result = fgets(buffer, sizeof(char)*159, stdin);
-        if ((strlen(result) > 0) && (result[strlen(result)-1] == '\n')){
-            result[strlen(result)-1]='\0';
-        }
         // Error and exit checks as well as outputs.
         if(result == NULL){
             working = 0;
             continue;
         }
-        else if(strlen(buffer) == 0) {
+        else {
+            if ((strlen(result) > 0) && (result[strlen(result)-1] == '\n')){
+                result[strlen(result)-1]='\0';
+            }
+        }
+        
+        if(strlen(buffer) == 0) {
             printf("Error: No input. Please enter a command.\n");
             continue;
         }
@@ -49,11 +52,6 @@ int main(int argc, char* argv[]) {
             working = 0;
             continue;
         } 
-        // Runs inputted command with the use of forking.
-        // First checks for amount of args by using spaces
-        // as delimeters, then populates a pointer array
-        // full of substrings as a result of token
-        // delimeters.
         else {
             // Sweeping the buffer without modifying it.
             char* bufferLoc = strchr(buffer, ' ');
