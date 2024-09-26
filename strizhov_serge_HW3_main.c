@@ -55,24 +55,25 @@ int main(int argc, char* argv[]) {
         // full of substrings as a result of token
         // delimeters.
         else {
-            int countOfArgs = 1; // To account for null terminator.
-            char* arg = strtok(buffer, " "); 
-            while (arg) {
+            // Sweeping the buffer without modifying it.
+            char* bufferLoc = strchr(buffer, ' ');
+            // To account for null term and no space at the end,
+            // This starts at two.
+            int countOfArgs = 2;
+            while (bufferLoc != NULL){
                 countOfArgs++;
-                arg = strtok(NULL, " ");
+                bufferLoc = bufferLoc + 1;
+                bufferLoc = strchr(bufferLoc, ' ');
             }
-
-            char* exeName = strtok(buffer, " ");
+            // Sweeping the buffer again and this time
+            // Modifying via tokenization.
             char* args[countOfArgs];
-            args[0] = exeName;
-            if (countOfArgs > 2) {
-                arg = strtok(exeName, " ");
-                printf("%s\n", arg);
-                for(int i = 1; i < countOfArgs; i++) {
-                    printf("%s\n", arg);
-                    args[i] = arg;
-                    arg = strtok(NULL, " ");
-                }
+            char* execName;
+            char* arg = strtok(buffer, " ");
+            execName = arg;
+            for(int i = 0; i < countOfArgs-1; i++) {
+                args[i] = arg;
+                arg = strtok(NULL, " ");
             }
             args[countOfArgs-1] = NULL;
 
@@ -83,7 +84,8 @@ int main(int argc, char* argv[]) {
                 continue;
             }
             else if (exe == 0){
-                execvp(exeName, args);
+                execvp(execName, args);
+                return 1; //Failsafe in case execvp doesn't do anything.
             }
             else {
                 int result;
